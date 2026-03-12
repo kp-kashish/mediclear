@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +15,7 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str
     AWS_REGION: str = "eu-central-1"
     S3_BUCKET_NAME: str
+    KMS_KEY_ID: Optional[str] = None
 
     DATABASE_URL: str
 
