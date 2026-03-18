@@ -16,6 +16,7 @@ class Biomarker(BaseModel):
     unit: str
     reference_range: str
     status: BiomarkerStatus
+    explanation: str = ""
 
 
 class ReportUploadResponse(BaseModel):
@@ -41,6 +42,5 @@ class IndexResponse(BaseModel):
 class ReportAnalysisResponse(BaseModel):
     report_id: str
     biomarkers: list[Biomarker]
-    summary: str
     questions_for_doctor: list[str]
     analyzed_at: datetime

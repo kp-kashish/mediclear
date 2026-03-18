@@ -6,10 +6,16 @@ from botocore.exceptions import ClientError
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.core.config import settings
-from app.models.report import ExtractionResponse, ReportUploadResponse, IndexResponse
+from app.models.report import (
+    ExtractionResponse,
+    IndexResponse,
+    ReportAnalysisResponse,
+    ReportUploadResponse,
+)
+from app.services.analyzer import analyze_report
+from app.services.embeddings import index_report, query_report
 from app.services.s3 import upload_pdf
 from app.services.textract import extract_from_s3
-from app.services.embeddings import index_report, query_report
 
 logger = logging.getLogger("mediclear")
 
@@ -98,3 +104,19 @@ async def query_report_endpoint(report_id: str, q: str) -> list[str]:
         raise HTTPException(status_code=500, detail="Failed to query report")
 
     return results
+
+
+@router.post("/analyze/{report_id}", response_model=ReportAnalysisResponse)
+async def analyze_report_endpoint(report_id: str, raw_text: str) -> ReportAnalysisResponse:
+    try:
+        result = analyze_report(report_id, raw_text)
+    except Exception as e:
+        logger.error("Analysis failed for report %s: %s", report_id, e)
+        raise HTTPException(status_code=500, detail="Failed to analyze report")
+
+    return ReportAnalysisResponse(
+        report_id=result["report_id"],
+        biomarkers=result["biomarkers"],
+        questions_for_doctor=result["questions_for_doctor"],
+        analyzed_at=result["analyzed_at"],
+    )
