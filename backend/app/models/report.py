@@ -32,6 +32,12 @@ class ExtractionResponse(BaseModel):
     extracted_at: datetime
 
 
+class IndexResponse(BaseModel):
+    report_id: str
+    chunk_count: int
+    indexed_at: datetime
+
+
 class ReportAnalysisResponse(BaseModel):
     report_id: str
     biomarkers: list[Biomarker]

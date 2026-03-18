@@ -6,9 +6,10 @@ from botocore.exceptions import ClientError
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app.core.config import settings
-from app.models.report import ExtractionResponse, ReportUploadResponse
+from app.models.report import ExtractionResponse, ReportUploadResponse, IndexResponse
 from app.services.s3 import upload_pdf
 from app.services.textract import extract_from_s3
+from app.services.embeddings import index_report, query_report
 
 logger = logging.getLogger("mediclear")
 
@@ -71,3 +72,29 @@ async def extract_report(report_id: str, filename: str) -> ExtractionResponse:
         tables=result["tables"],
         extracted_at=datetime.utcnow(),
     )
+
+
+@router.post("/index/{report_id}", response_model=IndexResponse)
+async def index_report_endpoint(report_id: str, raw_text: str) -> IndexResponse:
+    try:
+        chunk_count = index_report(report_id, raw_text)
+    except Exception as e:
+        logger.error("Indexing failed for report %s: %s", report_id, e)
+        raise HTTPException(status_code=500, detail="Failed to index report")
+
+    return IndexResponse(
+        report_id=report_id,
+        chunk_count=chunk_count,
+        indexed_at=datetime.utcnow(),
+    )
+
+
+@router.get("/query/{report_id}", response_model=list[str])
+async def query_report_endpoint(report_id: str, q: str) -> list[str]:
+    try:
+        results = query_report(report_id, q)
+    except Exception as e:
+        logger.error("Query failed for report %s: %s", report_id, e)
+        raise HTTPException(status_code=500, detail="Failed to query report")
+
+    return results

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.logging import configure_logging
 from app.api.v1.endpoints.reports import router as reports_router
+from app.services.medline_indexer import index_medline_data
 
 configure_logging()
 
@@ -19,6 +20,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    index_medline_data()
 
 
 @app.get("/health")
