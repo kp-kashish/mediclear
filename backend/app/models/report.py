@@ -44,3 +44,13 @@ class ReportAnalysisResponse(BaseModel):
     biomarkers: list[Biomarker]
     questions_for_doctor: list[str]
     analyzed_at: datetime
+
+
+class ProcessReportResponse(BaseModel):
+    report_id: str
+    filename: str
+    extraction_source: str
+    chunk_count: int
+    biomarkers: list[Biomarker]
+    questions_for_doctor: list[str]
+    analyzed_at: datetime

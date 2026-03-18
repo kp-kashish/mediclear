@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,10 +9,18 @@ from app.services.medline_indexer import index_medline_data
 
 configure_logging()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    index_medline_data()
+    yield
+
+
 app = FastAPI(
     title="MediClear API",
     version="0.1.0",
     description="Privacy-first AI agent for medical lab report analysis",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -20,11 +30,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    index_medline_data()
 
 
 @app.get("/health")

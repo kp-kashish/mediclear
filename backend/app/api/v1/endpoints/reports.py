@@ -9,11 +9,13 @@ from app.core.config import settings
 from app.models.report import (
     ExtractionResponse,
     IndexResponse,
+    ProcessReportResponse,
     ReportAnalysisResponse,
     ReportUploadResponse,
 )
 from app.services.analyzer import analyze_report
 from app.services.embeddings import index_report, query_report
+from app.services.pipeline import process_report
 from app.services.s3 import upload_pdf
 from app.services.textract import extract_from_s3
 
@@ -116,6 +118,33 @@ async def analyze_report_endpoint(report_id: str, raw_text: str) -> ReportAnalys
 
     return ReportAnalysisResponse(
         report_id=result["report_id"],
+        biomarkers=result["biomarkers"],
+        questions_for_doctor=result["questions_for_doctor"],
+        analyzed_at=result["analyzed_at"],
+    )
+
+
+@router.post("/process", response_model=ProcessReportResponse)
+async def process_report_endpoint(file: UploadFile = File(...)) -> ProcessReportResponse:
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+
+    file_bytes = await file.read()
+
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+
+    try:
+        result = process_report(file_bytes, file.filename)
+    except Exception as e:
+        logger.error("Pipeline failed: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to process report")
+
+    return ProcessReportResponse(
+        report_id=result["report_id"],
+        filename=result["filename"],
+        extraction_source=result["extraction_source"],
+        chunk_count=result["chunk_count"],
         biomarkers=result["biomarkers"],
         questions_for_doctor=result["questions_for_doctor"],
         analyzed_at=result["analyzed_at"],
