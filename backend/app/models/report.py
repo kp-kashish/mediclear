@@ -25,6 +25,13 @@ class ReportUploadResponse(BaseModel):
     message: str
 
 
+class ExtractionResponse(BaseModel):
+    report_id: str
+    raw_text: str
+    tables: list[list[list[str]]]
+    extracted_at: datetime
+
+
 class ReportAnalysisResponse(BaseModel):
     report_id: str
     biomarkers: list[Biomarker]
